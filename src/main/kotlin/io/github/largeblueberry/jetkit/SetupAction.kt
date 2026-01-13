@@ -2,31 +2,33 @@ package io.github.largeblueberry.jetkit
 
 import com.intellij.openapi.actionSystem.AnAction
 import com.intellij.openapi.actionSystem.AnActionEvent
+import com.intellij.openapi.command.WriteCommandAction
 import com.intellij.openapi.project.guessProjectDir
 import com.intellij.openapi.ui.Messages
-import com.intellij.openapi.vfs.VirtualFile
+import com.intellij.openapi.vfs.VfsUtil
 
 class SetupAction : AnAction() {
     override fun actionPerformed(e: AnActionEvent) {
-        // 1. 현재 열려 있는 프로젝트 정보 가져오기
         val project = e.project ?: return
+        val projectDir = project.guessProjectDir() ?: return
+        val gradleFile = projectDir.findChild("build.gradle.kts") ?: return
 
-        // 2. 프로젝트의 루트 디렉토리 찾기
-        val projectDir: VirtualFile? = project.guessProjectDir()
+        // 1. 기존 파일 내용 읽기
+        val currentContent = String(gradleFile.contentsToByteArray())
 
-        // 3. build.gradle.kts 파일 찾기
-        val gradleFile = projectDir?.findChild("build.gradle.kts")
+        // 2. 추가할 코드 준비
+        val newDependency = "\n\n// Added by JetKit\ndependencies {\n    implementation(\"com.example:jetkit-library:1.0.0\")\n}\n"
 
-        if (gradleFile != null) {
-            // 4. 파일 내용 읽기 (테스트용)
-            val content = String(gradleFile.contentsToByteArray())
+        // 3. 파일 수정하기 (WriteCommandAction 필수!)
+        WriteCommandAction.runWriteCommandAction(project) {
+            try {
+                // 기존 내용 끝에 새 코드를 붙여넣습니다.
+                VfsUtil.saveText(gradleFile, currentContent + newDependency)
 
-            Messages.showInfoMessage(
-                "파일을 찾았습니다!\n글자 수: ${content.length}자",
-                "JetKit 분석 결과"
-            )
-        } else {
-            Messages.showErrorDialog("build.gradle.kts 파일을 찾을 수 없습니다.", "에러")
+                Messages.showInfoMessage("성공적으로 의존성을 추가했습니다!", "JetKit 완료")
+            } catch (ex: Exception) {
+                Messages.showErrorDialog("파일 수정 중 오류 발생: ${ex.message}", "에러")
+            }
         }
     }
 }
