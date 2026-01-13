@@ -1,0 +1,61 @@
+.gradle
+build/
+!gradle/wrapper/gradle-wrapper.jar
+!**/src/main/**/build/
+!**/src/test/**/build/
+
+### IntelliJ IDEA ###
+.idea/modules.xml
+.idea/jarRepositories.xml
+.idea/compiler.xml
+.idea/libraries/
+*.iws
+*.iml
+*.ipr
+out/
+!**/src/main/**/out/
+!**/src/test/**/out/
+
+### Eclipse ###
+.apt_generated
+.classpath
+.factorypath
+.project
+.settings
+.springBeans
+.sts4-cache
+bin/
+!**/src/main/**/bin/
+!**/src/test/**/bin/
+
+### NetBeans ###
+/nbproject/private/
+/nbbuild/
+/dist/
+/nbdist/
+/.nb-gradle/
+
+### VS Code ###
+.vscode/
+
+### Mac OS ###
+.DS_Store
+
+### IntelliJ Plugin Development ###
+# 플러그인 실행 시 생성되는 샌드박스 디렉토리 (이미 build/가 있다면 포함되겠지만 명시적이면 좋습니다)
+/build/idea-sandbox/
+
+### Local Environment ###
+# 로컬 환경 설정 (SDK 경로 등 개인 PC 설정이 담깁니다)
+local.properties
+
+### IntelliJ IDEA ###
+# 개인 작업 공간 설정 (브레이크 포인트, 열려있는 탭 등 - 필수 제외)
+.idea/workspace.xml
+.idea/usage.statistics.xml
+.idea/tasks.xml
+.idea/shelf/
+.idea/dictionaries/
+
+# 로그 파일
+*.log
