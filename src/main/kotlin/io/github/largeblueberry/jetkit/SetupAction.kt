@@ -5,7 +5,12 @@ import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.command.WriteCommandAction
 import com.intellij.openapi.project.guessProjectDir
 import com.intellij.openapi.ui.Messages
-import com.intellij.openapi.vfs.VfsUtil
+import com.intellij.psi.PsiManager
+import com.intellij.psi.util.PsiTreeUtil
+import org.jetbrains.kotlin.psi.KtBlockExpression
+import org.jetbrains.kotlin.psi.KtCallExpression
+import org.jetbrains.kotlin.psi.KtFile
+import org.jetbrains.kotlin.psi.KtPsiFactory
 
 class SetupAction : AnAction() {
     override fun actionPerformed(e: AnActionEvent) {
@@ -13,22 +18,31 @@ class SetupAction : AnAction() {
         val projectDir = project.guessProjectDir() ?: return
         val gradleFile = projectDir.findChild("build.gradle.kts") ?: return
 
-        // 1. 기존 파일 내용 읽기
-        val currentContent = String(gradleFile.contentsToByteArray())
+        // VirtualFile을 PSI 파일로 변환 (이제 KtFile을 인식할 겁니다!)
+        val psiFile = PsiManager.getInstance(project).findFile(gradleFile) as? KtFile ?: return
 
-        // 2. 추가할 코드 준비
-        val newDependency = "\n\n// Added by JetKit\ndependencies {\n    implementation(\"com.example:jetkit-library:1.0.0\")\n}\n"
-
-        // 3. 파일 수정하기 (WriteCommandAction 필수!)
         WriteCommandAction.runWriteCommandAction(project) {
-            try {
-                // 기존 내용 끝에 새 코드를 붙여넣습니다.
-                VfsUtil.saveText(gradleFile, currentContent + newDependency)
+            val dependenciesBlock = findDependenciesBlock(psiFile)
 
-                Messages.showInfoMessage("성공적으로 의존성을 추가했습니다!", "JetKit 완료")
-            } catch (ex: Exception) {
-                Messages.showErrorDialog("파일 수정 중 오류 발생: ${ex.message}", "에러")
+            if (dependenciesBlock != null) {
+                val ktPsiFactory = KtPsiFactory(project)
+                // 추가할 코드 (줄바꿈 포함)
+                val newDependency = ktPsiFactory.createExpression("implementation(\"com.example:jetkit-library:1.0.0\")")
+
+                // 블록 안에 추가
+                dependenciesBlock.addBefore(newDependency, dependenciesBlock.lastChild)
+                dependenciesBlock.addBefore(ktPsiFactory.createNewLine(), dependenciesBlock.lastChild)
+
+                Messages.showInfoMessage("성공적으로 삽입되었습니다!", "JetKit")
+            } else {
+                Messages.showErrorDialog("dependencies 블록을 찾지 못했습니다.", "에러")
             }
         }
+    }
+
+    private fun findDependenciesBlock(file: KtFile): KtBlockExpression? {
+        val calls = PsiTreeUtil.findChildrenOfType(file, KtCallExpression::class.java)
+        val depCall = calls.find { it.calleeExpression?.text == "dependencies" }
+        return depCall?.lambdaArguments?.firstOrNull()?.getLambdaExpression()?.bodyExpression
     }
 }
